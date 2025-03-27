@@ -909,3 +909,734 @@ const redoState = history.redo();
 if (redoState) editor.restore(redoState);
 console.log(`After Redo: ${editor.getContent()}`);
 ```
+
+# Visitor
+
+The idea of the Visitor pattern is to leave a space in the classes to accept 2nd party functionality
+
+![alt text](image-6.png)
+
+## Example
+
+interfaces
+
+```ts
+// Visitor Interface
+interface Visitor {
+  visitCircle(circle: Circle): void;
+  visitRectangle(rectangle: Rectangle): void;
+}
+```
+
+```ts
+// Element Interface
+interface Shape {
+  accept(visitor: Visitor): void;
+}
+```
+
+our concrete elements
+
+```ts
+class Circle implements Shape {
+  accept(visitor: Visitor): void {
+    visitor.visitCircle(this);
+  }
+}
+```
+
+```ts
+class Rectangle implements Shape {
+  accept(visitor: Visitor): void {
+    visitor.visitRectangle(this);
+  }
+}
+```
+
+### creating visitors
+
+this is an example visitor that calculates area based on the **Public** members of the shape, we can make as many visitors as we can
+
+```ts
+class AreaCalculator implements Visitor {
+  visitCircle(circle: Circle): void {
+    console.log("Calculating area of Circle");
+  }
+
+  visitRectangle(rectangle: Rectangle): void {
+    console.log("Calculating area of Rectangle");
+  }
+}
+```
+
+### usage
+
+```ts
+const visitor = new AreaCalculator();
+
+const circle = new Circle();
+
+circle.accept(visitor); // it logs: "Calculating area of Circle"
+```
+
+## My thoughts
+
+I think this visitor pattern is not useful for many reasons
+
+- **It needs to operate on internal attributes of the class** thus it breaks the core pronciples of OOP (encapsulation, abstraction) and makes the code not safe
+
+- **It abstracts implementation** If I were too add more implementation; I would refactor the implementation rather than adding a new functionality blindly, this can lead to security vulnerability
+
+maybe It can be a good pattern in case of have a very old legacy code that barely works
+
+# Itirator
+
+the idea of the itiratoe pattern is to separate itiration over objects logic
+
+![alt text](image-7.png)
+
+this is better demonstrated with an example
+
+## Example
+
+interfaces
+
+```ts
+interface Iterator<T> {
+  next(): T | null;
+  hasNext(): boolean;
+}
+```
+
+```ts
+interface IterableCollection<T> {
+  getIterator(): Iterator<T>;
+}
+```
+
+the itirator
+
+```ts
+class ArrayIterator<T> implements Iterator<T> {
+  private index = 0;
+
+  constructor(private items: T[]) {}
+
+  next(): T | null {
+    if (this.hasNext()) {
+      return this.items[this.index++];
+    }
+    return null;
+  }
+
+  hasNext(): boolean {
+    return this.index < this.items.length;
+  }
+}
+```
+
+the collection repo
+
+```ts
+class NumberCollection implements IterableCollection<number> {
+  private numbers: number[];
+
+  constructor(numbers: number[]) {
+    this.numbers = numbers;
+  }
+
+  getIterator(): Iterator<number> {
+    return new ArrayIterator(this.numbers);
+  }
+}
+```
+
+### Usage
+
+```ts
+const collection = new NumberCollection([10, 20, 30, 40]);
+const iterator = collection.getIterator();
+
+while (iterator.hasNext()) {
+  console.log(iterator.next()); // Output: 10, 20, 30, 40
+}
+```
+
+# Chain of Responsibility (middlewares)
+
+it is having multiple handlers for the same input in chain
+
+![alt text](image-8.png)
+
+## Example
+
+```ts
+abstract class Logger {
+  // the class is abstract
+  protected next: Logger | null = null; // the next logger, it may exist meaning that there is a next function or may not exist meaning that we are at the last middleware
+
+  setNext(logger: Logger): Logger {
+    // this sets up the next middleware chained to the existing middleware
+    this.next = logger;
+    return logger; // returns the new one
+  }
+
+  log(level: string, message: string): void {
+    if (this.next) {
+      // this is the logging functionality
+      this.next.log(level, message);
+    }
+  }
+}
+```
+
+### middlewares
+
+these are three middlewares
+
+```ts
+class InfoLogger extends Logger {
+  log(level: string, message: string): void {
+    if (level === "INFO") {
+      console.log(`[INFO]: ${message}`);
+    } else {
+      super.log(level, message);
+    }
+  }
+}
+
+class WarningLogger extends Logger {
+  log(level: string, message: string): void {
+    if (level === "WARNING") {
+      console.log(`[WARNING]: ${message}`);
+    } else {
+      super.log(level, message);
+    }
+  }
+}
+
+class ErrorLogger extends Logger {
+  log(level: string, message: string): void {
+    if (level === "ERROR") {
+      console.log(`[ERROR]: ${message}`);
+    } else {
+      super.log(level, message);
+    }
+  }
+}
+```
+
+### Usage
+
+creating classes
+
+```ts
+const infoLogger = new InfoLogger();
+const warningLogger = new WarningLogger();
+const errorLogger = new ErrorLogger();
+```
+
+injecting middlewares
+
+```ts
+infoLogger.setNext(warningLogger).setNext(errorLogger);
+```
+
+```ts
+// Client makes requests
+infoLogger.log("INFO", "This is an information message.");
+infoLogger.log("WARNING", "This is a warning message.");
+infoLogger.log("ERROR", "This is an error message.");
+```
+
+this code will loop over all the middleware and only the crosponding one will executee
+
+# State
+
+instead of changing implementation bassed on state; bind the implementation to the stat
+
+![alt text](image-9.png)
+
+this is better demonstrated woth an example
+
+## Example
+
+interfaces
+
+```ts
+// State Interface
+interface OrderState {
+  processOrder(): void;
+  shipOrder(): void;
+  deliverOrder(): void;
+  cancelOrder(): void;
+}
+```
+
+order manager
+
+```ts
+// Context Class (Order Management)
+class OrderManagement {
+  private orderState: OrderState;
+
+  constructor() {
+    this.orderState = new NewOrderState(this); // Default state
+  }
+
+  changeState(state: OrderState) {
+    this.orderState = state;
+  }
+
+  processOrder() {
+    this.orderState.processOrder();
+  }
+
+  shipOrder() {
+    this.orderState.shipOrder();
+  }
+
+  deliverOrder() {
+    this.orderState.deliverOrder();
+  }
+
+  cancelOrder() {
+    this.orderState.cancelOrder();
+  }
+}
+```
+
+order states
+
+```ts
+// Concrete State: New Order
+class NewOrderState implements OrderState {
+  private orderManagement: OrderManagement;
+
+  constructor(orderManagement: OrderManagement) {
+    this.orderManagement = orderManagement;
+  }
+
+  processOrder() {
+    console.log("Order is now being processed.");
+    this.orderManagement.changeState(
+      new ProcessingOrderState(this.orderManagement)
+    );
+  }
+
+  shipOrder() {
+    console.log("Cannot ship order. Order is still new.");
+  }
+
+  deliverOrder() {
+    console.log("Cannot deliver order. Order is still new.");
+  }
+
+  cancelOrder() {
+    console.log("Order is cancelled.");
+    this.orderManagement.changeState(new CancelledOrderState());
+  }
+}
+
+// Concrete State: Processing Order
+class ProcessingOrderState implements OrderState {
+  private orderManagement: OrderManagement;
+
+  constructor(orderManagement: OrderManagement) {
+    this.orderManagement = orderManagement;
+  }
+
+  processOrder() {
+    console.log("Order is already being processed.");
+  }
+
+  shipOrder() {
+    console.log("Order is now shipped.");
+    this.orderManagement.changeState(
+      new ShippedOrderState(this.orderManagement)
+    );
+  }
+
+  deliverOrder() {
+    console.log("Cannot deliver order before shipping.");
+  }
+
+  cancelOrder() {
+    console.log("Order is cancelled.");
+    this.orderManagement.changeState(new CancelledOrderState());
+  }
+}
+
+// Concrete State: Shipped Order
+class ShippedOrderState implements OrderState {
+  private orderManagement: OrderManagement;
+
+  constructor(orderManagement: OrderManagement) {
+    this.orderManagement = orderManagement;
+  }
+
+  processOrder() {
+    console.log("Order has already been shipped and cannot be processed.");
+  }
+
+  shipOrder() {
+    console.log("Order is already shipped.");
+  }
+
+  deliverOrder() {
+    console.log("Order has been delivered.");
+    this.orderManagement.changeState(new DeliveredOrderState());
+  }
+
+  cancelOrder() {
+    console.log("Cannot cancel. Order has already been shipped.");
+  }
+}
+
+// Concrete State: Delivered Order
+class DeliveredOrderState implements OrderState {
+  deliverOrder() {
+    console.log("Order is already delivered.");
+  }
+
+  processOrder() {
+    console.log("Order is already delivered and cannot be processed.");
+  }
+
+  shipOrder() {
+    console.log("Order is already delivered and cannot be shipped.");
+  }
+
+  cancelOrder() {
+    console.log("Cannot cancel. Order is already delivered.");
+  }
+}
+
+// Concrete State: Cancelled Order
+class CancelledOrderState implements OrderState {
+  deliverOrder() {
+    console.log("Cannot deliver. Order is cancelled.");
+  }
+
+  processOrder() {
+    console.log("Cannot process. Order is cancelled.");
+  }
+
+  shipOrder() {
+    console.log("Cannot ship. Order is cancelled.");
+  }
+
+  cancelOrder() {
+    console.log("Order is already cancelled.");
+  }
+}
+```
+
+### usage
+
+```ts
+const order = new OrderManagement();
+order.processOrder(); // Transitions to Processing
+order.shipOrder(); // Transitions to Shipped
+order.deliverOrder(); // Transitions to Delivered
+order.cancelOrder(); // Order cannot be cancelled after delivery
+```
+
+# Mediator
+
+the Mediator is a class that do two things
+
+- defines communication rules
+
+- communicate classes
+
+![alt text](image-11.png)
+
+## Example
+
+![alt text](image-12.png)
+
+mediator interface
+
+```ts
+interface ChatMediator {
+  sendDirectMessage(message: string, sender: User, receiver: User): void;
+  sendGroupMessage(message: string, sender: User, groupName: string): void;
+  registerUserToGroup(user: User, groupName: string): void;
+}
+```
+
+mediator implementation
+
+```ts
+class ChatManagement implements ChatMediator {
+  private groups: Map<string, User[]> = new Map();
+
+  sendDirectMessage(message: string, sender: User, receiver: User): void {
+    receiver.receiveDirectMessage(message, sender.getName());
+  }
+
+  sendGroupMessage(message: string, sender: User, groupName: string): void {
+    const users = this.groups.get(groupName);
+    if (!users) {
+      console.log(`Group '${groupName}' does not exist.`);
+      return;
+    }
+
+    users.forEach((user) => {
+      if (user !== sender) {
+        user.receiveGroupMessage(message, sender.getName(), groupName);
+      }
+    });
+  }
+
+  registerUserToGroup(user: User, groupName: string): void {
+    if (!this.groups.has(groupName)) {
+      this.groups.set(groupName, []);
+    }
+    this.groups.get(groupName)?.push(user);
+  }
+}
+```
+
+a user
+
+```ts
+class User {
+  private name: string;
+  private chatMediator: ChatMediator;
+
+  constructor(name: string, chatMediator: ChatMediator) {
+    this.name = name;
+    this.chatMediator = chatMediator;
+  }
+
+  getName(): string {
+    return this.name;
+  }
+
+  sendDirectMessage(message: string, receiver: User): void {
+    console.log(
+      `${this.name} sends direct message to ${receiver.getName()}: ${message}`
+    );
+    this.chatMediator.sendDirectMessage(message, this, receiver);
+  }
+
+  sendGroupMessage(message: string, groupName: string): void {
+    console.log(
+      `${this.name} sends message to group '${groupName}': ${message}`
+    );
+    this.chatMediator.sendGroupMessage(message, this, groupName);
+  }
+
+  receiveDirectMessage(message: string, sender: string): void {
+    console.log(
+      `${this.name} received direct message from ${sender}: ${message}`
+    );
+  }
+
+  receiveGroupMessage(
+    message: string,
+    sender: string,
+    groupName: string
+  ): void {
+    console.log(
+      `${this.name} received group message in '${groupName}' from ${sender}: ${message}`
+    );
+  }
+}
+```
+
+### usage
+
+```ts
+const chatMediator = new ChatManagement();
+
+const user1 = new User("Alice", chatMediator);
+const user2 = new User("Bob", chatMediator);
+const user3 = new User("Charlie", chatMediator);
+
+chatMediator.registerUserToGroup(user1, "Developers");
+chatMediator.registerUserToGroup(user2, "Developers");
+chatMediator.registerUserToGroup(user3, "Developers");
+
+user1.sendDirectMessage("Hello Bob!", user2);
+user2.sendGroupMessage("Hey team!", "Developers");
+```
+
+# Command
+
+Instead of hardcoding commands and composing them manually, we can create a single entry point called **Command** that follows the same interface and executes multiple actions dynamically.
+
+![alt text](image-13.png)
+
+This is better demonstrated with an example.
+
+## Example
+
+### Command Interface
+
+```ts
+interface Command {
+  execute(): void;
+}
+```
+
+### Concrete Devices
+
+```ts
+class Light {
+  turnOn() {
+    console.log("Light is turned ON");
+  }
+
+  turnOff() {
+    console.log("Light is turned OFF");
+  }
+}
+
+class Tv {
+  turnOn() {
+    console.log("TV is turned ON");
+  }
+
+  turnOff() {
+    console.log("TV is turned OFF");
+  }
+}
+
+class Door {
+  lock() {
+    console.log("Door is LOCKED");
+  }
+
+  unlock() {
+    console.log("Door is UNLOCKED");
+  }
+}
+```
+
+### Commands That Run the Concrete Devices
+
+```ts
+class TurnOnLightCommand implements Command {
+  constructor(private light: Light) {}
+
+  execute(): void {
+    this.light.turnOn();
+  }
+}
+
+class TurnOffLightCommand implements Command {
+  constructor(private light: Light) {}
+
+  execute(): void {
+    this.light.turnOff();
+  }
+}
+
+class TurnOnTvCommand implements Command {
+  constructor(private tv: Tv) {}
+
+  execute(): void {
+    this.tv.turnOn();
+  }
+}
+
+class TurnOffTvCommand implements Command {
+  constructor(private tv: Tv) {}
+
+  execute(): void {
+    this.tv.turnOff();
+  }
+}
+
+class LockDoorCommand implements Command {
+  constructor(private door: Door) {}
+
+  execute(): void {
+    this.door.lock();
+  }
+}
+
+class UnlockDoorCommand implements Command {
+  constructor(private door: Door) {}
+
+  execute(): void {
+    this.door.unlock();
+  }
+}
+```
+
+### Class That Invokes Commands
+
+```ts
+class SmartHomeVoiceAssistant {
+  private commands: Map<string, Command> = new Map();
+
+  setCommand(name: string, command: Command) {
+    this.commands.set(name, command);
+  }
+
+  say(commandName: string) {
+    const command = this.commands.get(commandName);
+    if (command) {
+      console.log(`Voice Assistant executing: ${commandName}`);
+      command.execute();
+    } else {
+      console.log(`Command "${commandName}" not found`);
+    }
+  }
+}
+```
+
+### Mobile Application That Executes Commands
+
+```ts
+class SmartHomeMobileApplication {
+  execute(command: Command) {
+    console.log("Mobile App executing command...");
+    command.execute();
+  }
+}
+```
+
+## Usage
+
+### Create Commands and Device Classes
+
+```ts
+const light = new Light();
+const tv = new Tv();
+const door = new Door();
+
+const turnOnLight = new TurnOnLightCommand(light);
+const turnOffLight = new TurnOffLightCommand(light);
+const turnOnTv = new TurnOnTvCommand(tv);
+const turnOffTv = new TurnOffTvCommand(tv);
+const lockDoor = new LockDoorCommand(door);
+const unlockDoor = new UnlockDoorCommand(door);
+```
+
+### Inject Commands into Executors
+
+```ts
+const voiceAssistant = new SmartHomeVoiceAssistant();
+voiceAssistant.setCommand("turn on light", turnOnLight);
+voiceAssistant.setCommand("turn off light", turnOffLight);
+voiceAssistant.setCommand("lock door", lockDoor);
+voiceAssistant.setCommand("unlock door", unlockDoor);
+```
+
+### Mobile App That Can Execute Any Command
+
+```ts
+const mobileApp = new SmartHomeMobileApplication();
+```
+
+## Execution
+
+```ts
+voiceAssistant.say("turn on light");
+mobileApp.execute(lockDoor);
+```
