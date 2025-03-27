@@ -377,7 +377,7 @@ orderService2.placeOrder(200);
 
 # UML
 
-![alt text](image-3.png)
+![](image-3.png)
 
 # Observer
 
@@ -404,7 +404,7 @@ also who carries the events list is debatable
 - If the EmailService carries the events attached to lists of users then it will not itirate over millions of users but eventualy will carry millions of rours of users pointers and events
 
 the approach of the course:
-![alt text](image-1.png)
+// v(image-1.png)
 
 ## Implementation
 
@@ -565,7 +565,7 @@ If a class has a composition relatioship with an interface, instead of linking t
 
 it is exactly what we did in the DI pronciple
 
-![alt text](image-2.png)
+// v(image-2.png)
 
 we can have unlimited implementation of the same strategy
 
@@ -744,7 +744,7 @@ a momento class manages previous and next state
 
 **Think of iit like a _ctrl+z_ and _shift+ctrl+z_ buttons**
 
-![alt text](image-5.png)
+// v(image-5.png)
 
 ## Implementation
 
@@ -914,7 +914,7 @@ console.log(`After Redo: ${editor.getContent()}`);
 
 The idea of the Visitor pattern is to leave a space in the classes to accept 2nd party functionality
 
-![alt text](image-6.png)
+// v(image-6.png)
 
 ## Example
 
@@ -993,7 +993,7 @@ maybe It can be a good pattern in case of have a very old legacy code that barel
 
 the idea of the itiratoe pattern is to separate itiration over objects logic
 
-![alt text](image-7.png)
+// v(image-7.png)
 
 this is better demonstrated with an example
 
@@ -1066,7 +1066,7 @@ while (iterator.hasNext()) {
 
 it is having multiple handlers for the same input in chain
 
-![alt text](image-8.png)
+// v(image-8.png)
 
 ## Example
 
@@ -1155,7 +1155,7 @@ this code will loop over all the middleware and only the crosponding one will ex
 
 instead of changing implementation bassed on state; bind the implementation to the stat
 
-![alt text](image-9.png)
+// v(image-9.png)
 
 this is better demonstrated woth an example
 
@@ -1350,11 +1350,11 @@ the Mediator is a class that do two things
 
 - communicate classes
 
-![alt text](image-11.png)
+// v(image-11.png)
 
 ## Example
 
-![alt text](image-12.png)
+// v(image-12.png)
 
 mediator interface
 
@@ -1468,7 +1468,7 @@ user2.sendGroupMessage("Hey team!", "Developers");
 
 Instead of hardcoding commands and composing them manually, we can create a single entry point called **Command** that follows the same interface and executes multiple actions dynamically.
 
-![alt text](image-13.png)
+// v(image-13.png)
 
 This is better demonstrated with an example.
 
@@ -1640,3 +1640,562 @@ const mobileApp = new SmartHomeMobileApplication();
 voiceAssistant.say("turn on light");
 mobileApp.execute(lockDoor);
 ```
+
+# Adapter
+
+an adapter allows communication between legacy code and new code that hase unmatching interface
+
+an example would be
+
+## Example
+
+### legacy code
+
+```ts
+interface PaymentMethodAInterface {
+  pay(amount: number): void;
+}
+
+class ProcessPayment {
+  constructor(
+    private amount: number,
+    private paymentMethod: PaymentMethodAInterface
+  ) {}
+
+  processPayment(): void {
+    this.paymentMethod.pay(this.amount);
+  }
+}
+```
+
+this legacy code works fine but what if I want to use another payment method with yet diffirent interface, I will have to refactor thwe `ProcessPayment` class
+
+```ts
+interface PaymentMethodBInterface {
+  pay(amount: string): Promise<void>;
+}
+```
+
+### new code
+
+using an adapter will fix it
+
+```ts
+class PaymentMethodBAdapter implements PaymentMethodAInterface {
+  constructor(private paymentMethodB: PaymentMethodBInterface) {}
+
+  pay(amount: number): void {
+    this.paymentMethodB.pay(amount.toString()).then(() => {
+      console.log("Payment processed successfully");
+    });
+  }
+}
+```
+
+# Bridge
+
+in very simple words without BS, the Bridge pattern is just that we want the classes to depend on interface not implementation, thats it, nothing more
+
+// v(image-15.png)
+
+# Composite
+
+treat individual objects and compositions of objects uniformly
+
+## Example
+
+the folder and the leaf has the same interface, which facilated getting reports about a single file (that has size ) and many files (through the size of the folder which is actually addition of all sizes), we can also make compositions of composition
+
+interfaces
+
+```ts
+// Component
+interface FileSystem {
+  getSize(): number;
+}
+```
+
+```ts
+// Leaf
+class File implements FileSystem {
+  constructor(private size: number) {}
+
+  getSize(): number {
+    return this.size;
+  }
+}
+```
+
+the composing
+
+```ts
+// Composite
+class Folder implements FileSystem {
+  private children: FileSystem[] = [];
+
+  add(child: FileSystem): void {
+    this.children.push(child);
+  }
+
+  getSize(): number {
+    return this.children.reduce((sum, child) => sum + child.getSize(), 0);
+  }
+}
+```
+
+### application
+
+```ts
+const file1 = new File(10);
+const file2 = new File(20);
+const folder = new Folder();
+folder.add(file1);
+folder.add(file2);
+
+const file3 = new File(10);
+const file4 = new File(20);
+const folder2 = new Folder();
+folder2.add(file3);
+folder2.add(file4);
+
+const folder3 = new Folder();
+folder3.add(folder);
+folder3.add(folder2);
+
+// we can also add folders to folders
+```
+
+# Decorator
+
+a decorator adds functionality to methods without touching them
+
+## Example using basic syntax
+
+```ts
+// Component interface
+interface Coffee {
+  cost(): number;
+  description(): string;
+}
+
+// Concrete component
+class SimpleCoffee implements Coffee {
+  cost(): number {
+    return 5;
+  }
+
+  description(): string {
+    return "Simple Coffee";
+  }
+}
+
+// Decorator abstract class (implements Coffee interface)
+class CoffeeDecorator implements Coffee {
+  protected coffee: Coffee;
+
+  constructor(coffee: Coffee) {
+    this.coffee = coffee;
+  }
+
+  cost(): number {
+    return this.coffee.cost();
+  }
+
+  description(): string {
+    return this.coffee.description();
+  }
+}
+
+// Concrete decorator
+class MilkDecorator extends CoffeeDecorator {
+  cost(): number {
+    return this.coffee.cost() + 2;
+  }
+
+  description(): string {
+    return this.coffee.description() + " with Milk";
+  }
+}
+
+// Another concrete decorator
+class SugarDecorator extends CoffeeDecorator {
+  cost(): number {
+    return this.coffee.cost() + 1;
+  }
+
+  description(): string {
+    return this.coffee.description() + " with Sugar";
+  }
+}
+
+// Usage
+let coffee: Coffee = new SimpleCoffee();
+console.log(coffee.description() + " costs $" + coffee.cost());
+
+coffee = new MilkDecorator(coffee);
+console.log(coffee.description() + " costs $" + coffee.cost());
+
+coffee = new SugarDecorator(coffee);
+console.log(coffee.description() + " costs $" + coffee.cost());
+```
+
+## Example using Method decorators
+
+```ts
+// Base class for coffee
+class Coffee {
+  cost(): number {
+    return 5;
+  }
+
+  description(): string {
+    return "Simple Coffee";
+  }
+}
+
+// Method decorator to add Milk
+function MilkDecorator(
+  target: any,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) {
+  const originalMethod = descriptor.value;
+
+  descriptor.value = function (...args: any[]) {
+    return originalMethod.apply(this, args) + " with Milk";
+  };
+}
+
+// Method decorator to add Sugar
+function SugarDecorator(
+  target: any,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+) {
+  const originalMethod = descriptor.value;
+
+  descriptor.value = function (...args: any[]) {
+    return originalMethod.apply(this, args) + " with Sugar";
+  };
+}
+
+// New class that uses decorators on methods
+class DecoratedCoffee extends Coffee {
+  @MilkDecorator
+  description(): string {
+    return super.description();
+  }
+
+  @SugarDecorator
+  descriptionWithSugar(): string {
+    return super.description();
+  }
+}
+// Usage
+let coffee = new Coffee();
+console.log(coffee.description() + " costs $" + coffee.cost());
+
+let decoratedCoffee = new DecoratedCoffee();
+console.log(
+  decoratedCoffee.description() + " costs $" + decoratedCoffee.cost()
+);
+```
+
+# Facade
+
+a facade is a single entry point that abstracts alot of implementation details behind a single function call
+
+## Example
+
+Without a facade, turning on a home theater might involve multiple steps:
+
+```typescript
+class Amplifier {
+  on() {
+    console.log("Amplifier is ON");
+  }
+  setVolume(level: number) {
+    console.log(`Volume set to ${level}`);
+  }
+}
+
+class DVDPlayer {
+  on() {
+    console.log("DVD Player is ON");
+  }
+  play(movie: string) {
+    console.log(`Playing movie: ${movie}`);
+  }
+}
+
+class Projector {
+  on() {
+    console.log("Projector is ON");
+  }
+  setInput(source: string) {
+    console.log(`Projector input set to ${source}`);
+  }
+}
+```
+
+Now, using a **Facade**, we can simplify the process:
+
+```typescript
+class HomeTheaterFacade {
+  private amp: Amplifier;
+  private dvd: DVDPlayer;
+  private projector: Projector;
+
+  constructor(amp: Amplifier, dvd: DVDPlayer, projector: Projector) {
+    this.amp = amp;
+    this.dvd = dvd;
+    this.projector = projector;
+  }
+
+  watchMovie(movie: string) {
+    console.log("Setting up home theater...");
+    this.amp.on();
+    this.amp.setVolume(10);
+    this.projector.on();
+    this.projector.setInput("DVD");
+    this.dvd.on();
+    this.dvd.play(movie);
+    console.log("Enjoy your movie!");
+  }
+}
+
+// Usage
+const homeTheater = new HomeTheaterFacade(
+  new Amplifier(),
+  new DVDPlayer(),
+  new Projector()
+);
+homeTheater.watchMovie("Inception");
+```
+
+# Proxy
+
+a proxy is a middleman that handles communication between two users and interfaces, so it can apply inputs modification/validation, routing, logging and more
+
+# Flyweight
+
+Imagine a game with thousands of trees. Instead of creating separate objects for each tree, we share the common tree type (shape, texture, color) and only store unique details like position.
+
+## Example
+
+```ts
+// Shared tree type (intrinsic state)
+class TreeType {
+  constructor(
+    public name: string,
+    public color: string,
+    public texture: string
+  ) {}
+
+  display(x: number, y: number) {
+    console.log(
+      `Displaying ${this.name} tree at (${x}, ${y}) with color ${this.color}`
+    );
+  }
+}
+
+// Flyweight Factory to manage shared tree types
+class TreeFactory {
+  private static treeTypes: Map<string, TreeType> = new Map();
+
+  static getTreeType(name: string, color: string, texture: string): TreeType {
+    const key = `${name}_${color}_${texture}`;
+    if (!this.treeTypes.has(key)) {
+      this.treeTypes.set(key, new TreeType(name, color, texture));
+    }
+    return this.treeTypes.get(key)!;
+  }
+}
+
+// Tree object with extrinsic state (position)
+class Tree {
+  constructor(private x: number, private y: number, private type: TreeType) {}
+
+  display() {
+    this.type.display(this.x, this.y);
+  }
+}
+
+// Usage
+const forest: Tree[] = [];
+
+forest.push(new Tree(10, 20, TreeFactory.getTreeType("Oak", "Green", "Rough")));
+forest.push(new Tree(15, 25, TreeFactory.getTreeType("Oak", "Green", "Rough"))); // Shares same type
+forest.push(
+  new Tree(50, 60, TreeFactory.getTreeType("Pine", "Dark Green", "Smooth"))
+);
+
+forest.forEach((tree) => tree.display());
+```
+
+Here are the simple TypeScript examples for each design pattern:
+
+---
+
+# Singleton
+
+Ensures that only one instance of a class exists and provides a global access point to it.
+
+## Example
+
+```ts
+class Singleton {
+  private static instance: Singleton;
+
+  private constructor() {}
+
+  static getInstance(): Singleton {
+    if (!this.instance) {
+      this.instance = new Singleton();
+    }
+    return this.instance;
+  }
+}
+
+const s1 = Singleton.getInstance();
+const s2 = Singleton.getInstance();
+console.log(s1 === s2); // true
+```
+
+---
+
+# Factory
+
+Provides a method to create objects without specifying the exact class.
+
+## Example
+
+```ts
+class Car {
+  constructor(public model: string) {}
+}
+
+class CarFactory {
+  static createCar(model: string): Car {
+    return new Car(model);
+  }
+}
+
+const car = CarFactory.createCar("Tesla");
+console.log(car.model); // Tesla
+```
+
+---
+
+# Abstract Factory
+
+Creates families of related objects without specifying their concrete classes.
+
+## Example
+
+```ts
+interface Button {
+  render(): void;
+}
+
+class WindowsButton implements Button {
+  render() {
+    console.log("Windows Button");
+  }
+}
+
+class MacOSButton implements Button {
+  render() {
+    console.log("MacOS Button");
+  }
+}
+
+interface GUIFactory {
+  createButton(): Button;
+}
+
+class WindowsFactory implements GUIFactory {
+  createButton(): Button {
+    return new WindowsButton();
+  }
+}
+
+class MacOSFactory implements GUIFactory {
+  createButton(): Button {
+    return new MacOSButton();
+  }
+}
+
+const factory: GUIFactory = new WindowsFactory();
+const button = factory.createButton();
+button.render(); // Windows Button
+```
+
+---
+
+# Builder
+
+Constructs complex objects step by step.
+
+## Example
+
+```ts
+class Car {
+  public engine?: string;
+  public wheels?: number;
+}
+
+class CarBuilder {
+  private car = new Car();
+
+  setEngine(engine: string): this {
+    this.car.engine = engine;
+    return this;
+  }
+
+  setWheels(wheels: number): this {
+    this.car.wheels = wheels;
+    return this;
+  }
+
+  build(): Car {
+    return this.car;
+  }
+}
+
+const car = new CarBuilder().setEngine("V8").setWheels(4).build();
+console.log(car);
+```
+
+# Prototype Pattern
+
+The **Prototype Pattern** allows you to create new objects by copying an existing object (a prototype) instead of creating new instances from scratch. This is useful when object creation is expensive or complex.
+
+## Example
+
+```ts
+interface Prototype {
+  clone(): Prototype;
+}
+
+class Car implements Prototype {
+  constructor(public model: string, public color: string) {}
+
+  clone(): Car {
+    return new Car(this.model, this.color);
+  }
+}
+
+const car1 = new Car("Tesla", "Red");
+const car2 = car1.clone(); // Creates a new object with the same properties
+
+console.log(car1 === car2); // false (different objects)
+console.log(car1.model === car2.model); // true
+console.log(car1.color === car2.color); // true
+```
+
+This pattern is useful when you want to duplicate objects while preserving their existing structure and state.
+
+# The End
+
+thnks for reaching so far
