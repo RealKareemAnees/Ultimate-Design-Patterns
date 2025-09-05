@@ -1,24 +1,27 @@
-# Ultimate DEsign Patterns
+# Ultimate Design Patterns
 
-this is summary of the course
+This is a comprehensive summary of a course on design patterns. Design patterns are proven, reusable solutions to common problems in software design. They help make code more flexible, maintainable, and scalable. We'll start with the SOLID principles, which are foundational guidelines for object-oriented design, then briefly touch on UML (Unified Modeling Language) for visualizing designs, and proceed to explore various behavioral, structural, and creational patterns.
 
 # SOLID
 
-very awesome guidline principles
+SOLID is an acronym for five key principles of object-oriented programming and design, introduced by Robert C. Martin (Uncle Bob). These are not rigid rules but awesome guideline principles that promote code that's easier to understand, extend, and refactor. They reduce bugs, improve reusability, and make systems more robust to change. Violating them often leads to "spaghetti code" that's tightly coupled and hard to maintain.
 
-## Single Responsibility principle
+## Single Responsibility Principle
 
-**_a class has only one reason to change_**
+**A class should have only one reason to change.**
 
-I personaly think this term is better than "A class only do one thing" because Design patterns's major advantage is to ease refactoring; so the term "_one reason to change_" comes from the fact that when I refactor I will only change that exact part
+This principle emphasizes that a class should focus on a single responsibility or concern. I personally think the term "one reason to change" is better than the common paraphrase "a class should do only one thing" because the major advantage of design patterns is to ease refactoring. The phrase "one reason to change" highlights that when requirements evolve (e.g., due to business needs), only one part of the system should need modification, minimizing ripple effects.
 
-In case of violation; I will when refactoring I will have to change manythings because the class now manages alot of state and is very vulnerable to high coupling of methods even if they are separated
+In case of violation, refactoring becomes painful: you'll have to change many things because the class now manages a lot of state and is very vulnerable to high coupling of methods, even if they are separated. As long as many functionalities live within the class scope, it becomes a violation—no matter if they are in separated methods or not. This leads to "god classes" that do everything, making testing harder and increasing the risk of bugs.
 
-As long as many functionalities live within the class scope; it becomes violation, no matter if they are in separated methods or not
+Pros: Easier testing, lower coupling, better organization.  
+Cons: Can lead to more classes if over-applied (class explosion).  
+When to use: In services or models where multiple concerns (e.g., data access, logging, and business logic) are mixed.  
+Real-world analogy: A chef in a restaurant shouldn't also handle accounting and cleaning; each role has one responsibility.
 
-### TS example
+### TS Example
 
-this is violation
+This is a violation (the `UserService` handles user creation, email sending, and logging—all in one class, leading to tight coupling):
 
 ```ts
 class UserService {
@@ -42,7 +45,7 @@ const userService = new UserService();
 userService.createUser("Alice", "alice@example.com");
 ```
 
-this is application
+This is the proper application (responsibilities are separated into dedicated services, injected via dependency injection for loose coupling; now, changing email logic doesn't affect user creation):
 
 ```ts
 class EmailService {
@@ -79,17 +82,22 @@ const userService = new UserService(emailService, loggerService);
 userService.createUser("Alice", "alice@example.com");
 ```
 
-## Open Closed principle
+## Open-Closed Principle
 
-**_Open for adding; Closed for modifications_**
+**Classes should be open for extension but closed for modification.**
 
-the Idea is: when we refactor the code, we don't need to refactor anything, we just add the desired functionaliy seamlessly
+The idea is: when we refactor or add new features to the code, we shouldn't need to modify existing code; instead, we just add the desired functionality seamlessly through extension (e.g., via inheritance or interfaces). This protects stable code from breaking changes and promotes polymorphism.
 
-this is better demonstrated with an example
+This is better demonstrated with an example. Violating it often results in switch statements or if-else chains that grow with every new requirement, making the code fragile.
 
-### example
+Pros: Reduces regression bugs, easier to add features.  
+Cons: Requires upfront planning; over-abstraction can complicate simple code.  
+When to use: In systems with varying behaviors, like payment gateways or UI components.  
+Real-world analogy: A smartphone's app store— you extend functionality by adding apps without modifying the OS core.
 
-the violation
+### Example
+
+The violation (adding a new payment method requires modifying the `PaymentProcessor` class, violating "closed for modification"):
 
 ```ts
 class PaymentProcessor {
@@ -110,7 +118,7 @@ processor.processPayment("credit_card", 100);
 processor.processPayment("paypal", 50);
 ```
 
-the application
+The application (new methods are added via interface implementations without touching `PaymentProcessor`; open for extension):
 
 ```ts
 interface PaymentMethod {
@@ -154,13 +162,22 @@ processor.processPayment(paypal, 50);
 processor.processPayment(bitcoin, 200);
 ```
 
-## Liskov substitution
+## Liskov Substitution Principle
 
-**Parent class can Be replaced by Child class**
+**Objects of a parent class should be replaceable by objects of a child class without affecting the correctness of the program.**
 
-### examples
+In other words, subtypes must be substitutable for their base types. This ensures that inheritance hierarchies behave predictably, preventing unexpected errors when using derived classes.
 
-violation
+Violations often occur when subclasses override methods in ways that break assumptions made by the base class or clients.
+
+Pros: Promotes reliable polymorphism and code reuse.  
+Cons: Can limit flexibility in inheritance if not designed carefully.  
+When to use: When building class hierarchies, like in animal simulations or shape calculators.  
+Real-world analogy: A USB port—any compatible device (mouse, keyboard) should work without issues.
+
+### Examples
+
+Violation (Penguin inherits from Bird but throws an error on `fly`, breaking substitutability):
 
 ```ts
 class Bird {
@@ -189,7 +206,7 @@ makeBirdFly(sparrow); //  Works fine
 makeBirdFly(penguin); //  Throws an error: "Penguins cannot fly!"
 ```
 
-application
+Application (Separate flying behavior; Penguin can't be passed to flying functions, enforcing type safety):
 
 ```ts
 class Bird {
@@ -224,17 +241,22 @@ makeBirdFly(sparrow); //  Works fine
 // makeBirdFly(penguin);  Type error: Argument of type 'Penguin' is not assignable to parameter of type 'FlyingBird'.
 ```
 
-## Interface segregation
+## Interface Segregation Principle
 
-**_Classes should not implement or use interfaces that has members that are not used_**
+**Classes should not be forced to implement or use interfaces that have members they do not use.**
 
-fixing this problem is by breaking the interface into smaller interfaces and only working with interfaces that makes sense
+To fix this, break large interfaces into smaller, more specific ones. Clients should only depend on what they need. Note: The term "interface" here can also refer to abstract classes or contracts in general.
 
-> also the term _Interface_ may be an abstract
+This prevents "fat interfaces" that bloat classes with irrelevant methods, improving cohesion.
 
-### examples
+Pros: Better modularity, easier to implement partial behaviors.  
+Cons: More interfaces to manage.  
+When to use: In APIs or libraries where clients have varying needs.  
+Real-world analogy: A TV remote shouldn't have buttons for unrelated devices; segregate controls.
 
-violation
+### Examples
+
+Violation (Robot must implement `takeBreak`, which doesn't make sense, leading to errors):
 
 ```ts
 interface Worker {
@@ -271,7 +293,7 @@ workers.forEach((worker) => {
 });
 ```
 
-application
+Application (Split interfaces; robots only implement what's relevant):
 
 ```ts
 interface Workable {
@@ -306,15 +328,20 @@ const breakableWorkers: Breakable[] = [new HumanWorker()];
 breakableWorkers.forEach((worker) => worker.takeBreak()); // Only humans take breaks
 ```
 
-## Dependency inversion
+## Dependency Inversion Principle
 
-**_High level (users) modules should not depend on the abstraction (implementation) but they should depend on the interface_**
+**High-level modules should not depend on low-level modules; both should depend on abstractions. Abstractions should not depend on details; details should depend on abstractions.**
 
-then the _Low level modules_ are **injected** into the _High level modules_ and that is **Dependecy injection**
+In practice, high-level (user-facing) modules should depend on interfaces, not concrete implementations. Low-level modules (details) are then **injected** into high-level modules via **dependency injection** (DI). This decouples code, making it easier to swap implementations (e.g., for testing or changes).
 
-### examples
+Pros: Flexibility, testability (e.g., mock dependencies).  
+Cons: Adds indirection, which can feel overkill for simple apps.  
+When to use: In layered architectures, like services depending on repositories.  
+Real-world analogy: A lamp depends on a socket interface, not a specific bulb type.
 
-violation
+### Examples
+
+Violation (Direct dependency on `PayPalPayment`, hard to switch providers):
 
 ```ts
 class PayPalPayment {
@@ -337,7 +364,7 @@ const orderService = new OrderService();
 orderService.placeOrder(100);
 ```
 
-application
+Application (Depend on interface; inject implementations for flexibility):
 
 ```ts
 interface PaymentProcessor {
@@ -377,38 +404,36 @@ orderService2.placeOrder(200);
 
 # UML
 
-![](image-3.png)
+UML (Unified Modeling Language) is a standardized way to visualize the design of a system using diagrams. It helps in planning, documenting, and communicating software architecture. Common diagrams include class diagrams (showing relationships like inheritance and composition), sequence diagrams (interactions over time), and use case diagrams.
+
+The original content references an image: ![](image-3.png). In practice, UML class diagrams use boxes for classes, arrows for inheritance (solid line with triangle), and diamonds for composition/aggregation.
+
+Pros: Improves team collaboration, identifies issues early.  
+Cons: Can be time-consuming to maintain.  
+When to use: For complex systems or during design reviews.
 
 # Observer
 
-It is about having an **Observabls** (emailService) that notifies **Observers** (User) with events that the **Observers** has subscribed to
+The Observer pattern defines a one-to-many dependency between objects so that when one object (the Observable or Subject) changes state, all its dependents (Observers) are notified and updated automatically. It's about having an **Observable** (e.g., emailService) that notifies **Observers** (e.g., User) with events that the **Observers** have subscribed to.
 
-```ts
-interface Observable {
-  subscribe(observer: ObserverInterface, eventType: string): void;
-  unSubscribe(observer: ObserverInterface, eventType: string): void;
-  notify(event: EventInterface): void;
-}
-```
+This is useful for event-driven systems, like UI updates or pub/sub messaging. Also, who carries the events list is debatable:
 
-```ts
-interface ObserverInterface {
-  notify(event: EventInterface): void;
-}
-```
+- If the Observers (Users) carry the events, the Observable (EmailService) will iterate over millions of users that could be not subscribing to any events at all, wasting resources.
 
-also who carries the events list is debatable
+- If the Observable (EmailService) carries the events attached to lists of users, then it will not iterate over millions of users but eventually will carry millions of rows of user pointers and events, which is more efficient for notification but uses more memory.
 
-- If the Users carries the events then the EmailService will itirate over millions of users that could be not subscribing to any avents at all
+The approach in this course uses the latter (Observable manages subscribers per event).
 
-- If the EmailService carries the events attached to lists of users then it will not itirate over millions of users but eventualy will carry millions of rours of users pointers and events
+Pros: Loose coupling, easy to add/remove observers.  
+Cons: Can lead to memory leaks if observers aren't unsubscribed; potential for update cascades.  
+When to use: In reactive systems, like stock tickers or notification systems.  
+Real-world analogy: A newsletter publisher (Observable) sends updates to subscribers (Observers).
 
-the approach of the course:
-// v(image-1.png)
+The original content references an image: // v(image-1.png)
 
 ## Implementation
 
-### defining interfaces
+### Defining Interfaces
 
 ```ts
 interface EventInterface {
@@ -431,7 +456,9 @@ interface ObserverInterface {
 }
 ```
 
-### defining classes
+Note: The original uses `Observable` and `ObserverInterface`, but I've kept it consistent. `attach/detach` are synonyms for subscribe/unsubscribe.
+
+### Defining Classes
 
 ```ts
 // Observer (User)
@@ -531,7 +558,7 @@ class SMSService {
 }
 ```
 
-usage
+Usage (demonstrates subscription, notification, and unsubscription):
 
 ```ts
 const notificationService = new NotificationService();
@@ -561,15 +588,18 @@ smsService.sendSMS("New SMS campaign launched!");
 
 # Strategy
 
-If a class has a composition relatioship with an interface, instead of linking them with hard coding, we can inject the implementation
+The Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. If a class has a composition relationship with an interface, instead of linking them with hard coding, we can inject the implementation. This allows behavior to be selected at runtime.
 
-it is exactly what we did in the DI pronciple
+It is exactly what we did in the Dependency Inversion principle, promoting flexibility. We can have unlimited implementations of the same strategy.
 
-// v(image-2.png)
+Pros: Easy to switch behaviors, adheres to open-closed.  
+Cons: Clients must know about strategies; adds classes.  
+When to use: For varying algorithms, like sorting or compression.  
+Real-world analogy: Navigation apps choosing strategies (fastest, shortest, scenic) for routes.
 
-we can have unlimited implementation of the same strategy
+The original content references an image: // v(image-2.png)
 
-## Implementaion
+## Implementation
 
 Defines a common interface for different pricing strategies.
 
@@ -675,9 +705,14 @@ checkout.processPayment(product1.calculatePrice());
 
 # Template Method
 
-The **Template Method** design pattern defines the **skeleton of an algorithm** in a base class but lets subclasses **override specific steps** without changing the algorithm's structure.
+The **Template Method** design pattern defines the **skeleton of an algorithm** in a base class but lets subclasses **override specific steps** without changing the algorithm's structure. This promotes code reuse for common workflows while allowing customization.
 
-Here’s a **TypeScript implementation** using Markdown under `## Implementation`.
+Here’s a **TypeScript implementation** using Markdown under `## Implementation`. It's useful for processes with invariant steps but variable details.
+
+Pros: Reuses code, enforces structure.  
+Cons: Subclasses are tightly coupled to the base; hard to change the skeleton.  
+When to use: In frameworks, like game loops or report generators.  
+Real-world analogy: A recipe template—steps like "prep ingredients" are fixed, but details vary per dish.
 
 ## Implementation
 
@@ -726,7 +761,7 @@ class InStoreOrderProcessor extends OrderProcessor {
 }
 ```
 
-usage
+Usage (shows how the template enforces the order while allowing variation):
 
 ```typescript
 const onlineOrder = new OnlineOrderProcessor();
@@ -738,13 +773,18 @@ const inStoreOrder = new InStoreOrderProcessor();
 inStoreOrder.processOrder();
 ```
 
-# Momento
+# Memento
 
-a momento class manages previous and next state
+The Memento pattern allows capturing and restoring an object's internal state without violating encapsulation. A memento class manages previous and next states.
 
-**Think of iit like a _ctrl+z_ and _shift+ctrl+z_ buttons**
+**Think of it like _Ctrl+Z_ (undo) and _Shift+Ctrl+Z_ (redo) buttons** in editors. It's useful for implementing undo/redo functionality.
 
-// v(image-5.png)
+Pros: Preserves encapsulation, easy history management.  
+Cons: Can consume memory with many states.  
+When to use: In applications like text editors, games, or databases for transactions.  
+Real-world analogy: Browser history—save states to navigate back/forward.
+
+The original content references an image: // v(image-5.png)
 
 ## Implementation
 
@@ -818,7 +858,9 @@ const firstState = caretaker.getMemento(0);
 if (firstState) originator.restoreState(firstState);
 ```
 
-## Example implementation of the text editor
+## Example Implementation of the Text Editor
+
+This builds on the basic implementation for a more meaningful example, like a text editor with undo/redo.
 
 ```typescript
 class TextEditorState {
@@ -878,7 +920,7 @@ class History {
 }
 ```
 
-usage
+Usage (demonstrates saving states, undo, and redo):
 
 ```typescript
 const editor = new TextEditor();
@@ -912,13 +954,22 @@ console.log(`After Redo: ${editor.getContent()}`);
 
 # Visitor
 
-The idea of the Visitor pattern is to leave a space in the classes to accept 2nd party functionality
+The Visitor pattern allows adding new operations to a class hierarchy without modifying the classes themselves. The idea is to leave a space in the classes to accept 2nd party functionality via a `visit` method.
 
-// v(image-6.png)
+This separates algorithms from the objects they operate on, useful for operations like reporting or exporting.
+
+Pros: Easy to add new operations; adheres to open-closed.  
+Cons: Requires modifying elements if new types are added; can break encapsulation if visitors access private data.  
+When to use: When you have stable object structures but frequently add operations (e.g., AST in compilers).  
+Real-world analogy: A museum visitor (operation) touring exhibits (objects) without changing the exhibits.
+
+My thoughts: The original critique notes that it may not be useful because **it needs to operate on internal attributes of the class**, thus potentially breaking core principles of OOP (encapsulation, abstraction) and making the code less safe. Additionally, **it abstracts implementation**—if I were to add more implementation, I would refactor the implementation rather than adding a new functionality blindly, which can lead to security vulnerabilities. However, it can be a good pattern in cases of very old legacy code that barely works, or when you need to extend functionality without touching source code (e.g., in libraries).
+
+The original content references an image: // v(image-6.png)
 
 ## Example
 
-interfaces
+Interfaces
 
 ```ts
 // Visitor Interface
@@ -935,7 +986,7 @@ interface Shape {
 }
 ```
 
-our concrete elements
+Our concrete elements
 
 ```ts
 class Circle implements Shape {
@@ -953,9 +1004,9 @@ class Rectangle implements Shape {
 }
 ```
 
-### creating visitors
+### Creating Visitors
 
-this is an example visitor that calculates area based on the **Public** members of the shape, we can make as many visitors as we can
+This is an example visitor that calculates area based on the **public** members of the shape (to preserve encapsulation; assume shapes expose radius/width/height publicly). We can make as many visitors as needed (e.g., one for drawing, one for serialization).
 
 ```ts
 class AreaCalculator implements Visitor {
@@ -969,7 +1020,7 @@ class AreaCalculator implements Visitor {
 }
 ```
 
-### usage
+### Usage
 
 ```ts
 const visitor = new AreaCalculator();
@@ -979,27 +1030,24 @@ const circle = new Circle();
 circle.accept(visitor); // it logs: "Calculating area of Circle"
 ```
 
-## My thoughts
+# Iterator
 
-I think this visitor pattern is not useful for many reasons
+The Iterator pattern provides a way to access elements of an aggregate object sequentially without exposing its underlying representation. The idea is to separate iteration logic over objects from the collection itself.
 
-- **It needs to operate on internal attributes of the class** thus it breaks the core pronciples of OOP (encapsulation, abstraction) and makes the code not safe
+This allows traversing different data structures (arrays, trees, etc.) uniformly.
 
-- **It abstracts implementation** If I were too add more implementation; I would refactor the implementation rather than adding a new functionality blindly, this can lead to security vulnerability
+Pros: Simplifies traversal, supports multiple iterators.  
+Cons: Overkill for simple collections; adds complexity.  
+When to use: In collections like lists or maps where clients need to iterate without knowing internals.  
+Real-world analogy: A TV remote iterating through channels without knowing how the TV stores them.
 
-maybe It can be a good pattern in case of have a very old legacy code that barely works
+This is better demonstrated with an example.
 
-# Itirator
-
-the idea of the itiratoe pattern is to separate itiration over objects logic
-
-// v(image-7.png)
-
-this is better demonstrated with an example
+The original content references an image: // v(image-7.png)
 
 ## Example
 
-interfaces
+Interfaces
 
 ```ts
 interface Iterator<T> {
@@ -1014,7 +1062,7 @@ interface IterableCollection<T> {
 }
 ```
 
-the itirator
+The iterator
 
 ```ts
 class ArrayIterator<T> implements Iterator<T> {
@@ -1035,7 +1083,7 @@ class ArrayIterator<T> implements Iterator<T> {
 }
 ```
 
-the collection repo
+The collection repo
 
 ```ts
 class NumberCollection implements IterableCollection<number> {
@@ -1062,11 +1110,18 @@ while (iterator.hasNext()) {
 }
 ```
 
-# Chain of Responsibility (middlewares)
+# Chain of Responsibility (Middlewares)
 
-it is having multiple handlers for the same input in chain
+The Chain of Responsibility pattern avoids coupling the sender of a request to its receiver by giving more than one object a chance to handle the request. It involves having multiple handlers for the same input in a chain, like middlewares in web frameworks (e.g., Express.js).
 
-// v(image-8.png)
+Each handler decides whether to process the request or pass it to the next.
+
+Pros: Decouples senders/receivers, easy to add handlers.  
+Cons: Request might not be handled; debugging chains can be tricky.  
+When to use: In logging, authentication, or request pipelines.  
+Real-world analogy: A customer service call routed through levels of support.
+
+The original content references an image: // v(image-8.png)
 
 ## Example
 
@@ -1090,9 +1145,9 @@ abstract class Logger {
 }
 ```
 
-### middlewares
+### Middlewares
 
-these are three middlewares
+These are three middlewares (each handles a specific log level or passes on).
 
 ```ts
 class InfoLogger extends Logger {
@@ -1128,7 +1183,7 @@ class ErrorLogger extends Logger {
 
 ### Usage
 
-creating classes
+Creating classes
 
 ```ts
 const infoLogger = new InfoLogger();
@@ -1136,7 +1191,7 @@ const warningLogger = new WarningLogger();
 const errorLogger = new ErrorLogger();
 ```
 
-injecting middlewares
+Injecting middlewares (chains them together)
 
 ```ts
 infoLogger.setNext(warningLogger).setNext(errorLogger);
@@ -1149,19 +1204,26 @@ infoLogger.log("WARNING", "This is a warning message.");
 infoLogger.log("ERROR", "This is an error message.");
 ```
 
-this code will loop over all the middleware and only the crosponding one will executee
+This code will loop over all the middleware and only the corresponding one will execute.
 
 # State
 
-instead of changing implementation bassed on state; bind the implementation to the stat
+The State pattern allows an object to alter its behavior when its internal state changes, appearing as if the object's class has changed. Instead of changing implementation based on state (e.g., via if-else), bind the implementation to the state via delegated classes.
 
-// v(image-9.png)
+This cleans up complex conditional logic.
 
-this is better demonstrated woth an example
+Pros: Localizes state behavior, adheres to single responsibility.  
+Cons: Can lead to many state classes.  
+When to use: In workflows like order processing or UI states.  
+Real-world analogy: A traffic light changing behavior based on color state.
+
+This is better demonstrated with an example.
+
+The original content references an image: // v(image-9.png)
 
 ## Example
 
-interfaces
+Interfaces
 
 ```ts
 // State Interface
@@ -1173,7 +1235,7 @@ interface OrderState {
 }
 ```
 
-order manager
+Order manager
 
 ```ts
 // Context Class (Order Management)
@@ -1206,7 +1268,7 @@ class OrderManagement {
 }
 ```
 
-order states
+Order states (each encapsulates behavior for that state)
 
 ```ts
 // Concrete State: New Order
@@ -1332,7 +1394,7 @@ class CancelledOrderState implements OrderState {
 }
 ```
 
-### usage
+### Usage
 
 ```ts
 const order = new OrderManagement();
@@ -1344,19 +1406,26 @@ order.cancelOrder(); // Order cannot be cancelled after delivery
 
 # Mediator
 
-the Mediator is a class that do two things
+The Mediator pattern defines an object that encapsulates how a set of objects interact, promoting loose coupling by preventing objects from referring to each other explicitly. The Mediator is a class that does two things:
 
-- defines communication rules
+- Defines communication rules.
 
-- communicate classes
+- Communicates between classes.
 
-// v(image-11.png)
+This centralizes complex interactions.
+
+Pros: Reduces dependencies, easier to maintain.  
+Cons: Mediator can become a god class.  
+When to use: In GUI components or chat apps where objects need to collaborate.  
+Real-world analogy: Air traffic control mediating planes.
+
+The original content references an image: // v(image-11.png)
 
 ## Example
 
-// v(image-12.png)
+The original references another image: // v(image-12.png)
 
-mediator interface
+Mediator interface
 
 ```ts
 interface ChatMediator {
@@ -1366,7 +1435,7 @@ interface ChatMediator {
 }
 ```
 
-mediator implementation
+Mediator implementation
 
 ```ts
 class ChatManagement implements ChatMediator {
@@ -1399,7 +1468,7 @@ class ChatManagement implements ChatMediator {
 }
 ```
 
-a user
+A user
 
 ```ts
 class User {
@@ -1447,7 +1516,7 @@ class User {
 }
 ```
 
-### usage
+### Usage
 
 ```ts
 const chatMediator = new ChatManagement();
@@ -1466,9 +1535,16 @@ user2.sendGroupMessage("Hey team!", "Developers");
 
 # Command
 
-Instead of hardcoding commands and composing them manually, we can create a single entry point called **Command** that follows the same interface and executes multiple actions dynamically.
+The Command pattern turns a request into a stand-alone object that contains all information about the request. Instead of hardcoding commands and composing them manually, we can create a single entry point called **Command** that follows the same interface and executes multiple actions dynamically.
 
-// v(image-13.png)
+This allows parameterizing methods with commands, queuing, logging, or undoing them.
+
+Pros: Decouples invokers from receivers, supports undo.  
+Cons: Adds classes for each command.  
+When to use: In GUIs (e.g., menu actions), transactions, or macros.  
+Real-world analogy: A remote control where buttons (commands) trigger device actions.
+
+The original content references an image: // v(image-13.png)
 
 This is better demonstrated with an example.
 
@@ -1643,13 +1719,20 @@ mobileApp.execute(lockDoor);
 
 # Adapter
 
-an adapter allows communication between legacy code and new code that hase unmatching interface
+The Adapter pattern allows incompatible interfaces to work together by wrapping one in a compatible interface. An adapter enables communication between legacy code and new code that has an unmatching interface.
 
-an example would be
+This is structural, like a converter.
+
+Pros: Reuses existing code, adheres to open-closed.  
+Cons: Adds indirection.  
+When to use: Integrating third-party libraries or legacy systems.  
+Real-world analogy: A power adapter for international plugs.
+
+An example would be:
 
 ## Example
 
-### legacy code
+### Legacy Code
 
 ```ts
 interface PaymentMethodAInterface {
@@ -1668,7 +1751,7 @@ class ProcessPayment {
 }
 ```
 
-this legacy code works fine but what if I want to use another payment method with yet diffirent interface, I will have to refactor thwe `ProcessPayment` class
+This legacy code works fine but what if I want to use another payment method with a different interface? I will have to refactor the `ProcessPayment` class without an adapter.
 
 ```ts
 interface PaymentMethodBInterface {
@@ -1676,9 +1759,9 @@ interface PaymentMethodBInterface {
 }
 ```
 
-### new code
+### New Code
 
-using an adapter will fix it
+Using an adapter will fix it (converts types and handles async):
 
 ```ts
 class PaymentMethodBAdapter implements PaymentMethodAInterface {
@@ -1694,19 +1777,31 @@ class PaymentMethodBAdapter implements PaymentMethodAInterface {
 
 # Bridge
 
-in very simple words without BS, the Bridge pattern is just that we want the classes to depend on interface not implementation, thats it, nothing more
+The Bridge pattern decouples an abstraction from its implementation so that the two can vary independently. In very simple words without BS, the Bridge pattern is just that we want the classes to depend on interfaces, not implementations—that's it, nothing more. It prevents a cartesian product of classes (e.g., no need for RedCircle, BlueCircle if color is bridged).
 
-// v(image-15.png)
+Pros: Flexibility in changing implementations, avoids class explosion.  
+Cons: Increases complexity.  
+When to use: When abstractions and implementations need to evolve separately, like devices with remotes.  
+Real-world analogy: A remote control (abstraction) working with different TVs (implementations).
+
+The original content references an image: // v(image-15.png)
 
 # Composite
 
-treat individual objects and compositions of objects uniformly
+The Composite pattern composes objects into tree structures to represent part-whole hierarchies. It lets you treat individual objects and compositions of objects uniformly.
+
+This is useful for hierarchical structures like file systems or UI components.
+
+Pros: Simplifies client code, easy to add new components.  
+Cons: Can make designs overly general.  
+When to use: In trees or graphs, like menus or directories.  
+Real-world analogy: A company org chart—treat employees and departments the same for operations like payroll.
 
 ## Example
 
-the folder and the leaf has the same interface, which facilated getting reports about a single file (that has size ) and many files (through the size of the folder which is actually addition of all sizes), we can also make compositions of composition
+The folder and the leaf have the same interface, which facilitates getting reports about a single file (that has size) and many files (through the size of the folder, which is actually the addition of all sizes). We can also make compositions of compositions.
 
-interfaces
+Interfaces
 
 ```ts
 // Component
@@ -1726,7 +1821,7 @@ class File implements FileSystem {
 }
 ```
 
-the composing
+The composing
 
 ```ts
 // Composite
@@ -1743,7 +1838,7 @@ class Folder implements FileSystem {
 }
 ```
 
-### application
+### Application
 
 ```ts
 const file1 = new File(10);
@@ -1767,9 +1862,14 @@ folder3.add(folder2);
 
 # Decorator
 
-a decorator adds functionality to methods without touching them
+The Decorator pattern attaches additional responsibilities to an object dynamically. A decorator adds functionality to methods without touching them, providing a flexible alternative to subclassing.
 
-## Example using basic syntax
+Pros: More flexible than inheritance, composable.  
+Cons: Can lead to many small objects; harder to debug.  
+When to use: For adding features like logging or caching without modifying core classes.  
+Real-world analogy: Adding toppings to a pizza without changing the base recipe.
+
+## Example Using Basic Syntax
 
 ```ts
 // Component interface
@@ -1839,7 +1939,9 @@ coffee = new SugarDecorator(coffee);
 console.log(coffee.description() + " costs $" + coffee.cost());
 ```
 
-## Example using Method decorators
+## Example Using Method Decorators
+
+TypeScript supports decorators as a language feature for meta-programming.
 
 ```ts
 // Base class for coffee
@@ -1903,7 +2005,12 @@ console.log(
 
 # Facade
 
-a facade is a single entry point that abstracts alot of implementation details behind a single function call
+The Facade pattern provides a unified interface to a set of interfaces in a subsystem. A facade is a single entry point that abstracts a lot of implementation details behind a single function call, simplifying complex systems.
+
+Pros: Hides complexity, improves readability.  
+Cons: Can become a god object if overused.  
+When to use: For libraries or subsystems like APIs.  
+Real-world analogy: A car dashboard—hides engine details behind simple controls.
 
 ## Example
 
@@ -1975,11 +2082,21 @@ homeTheater.watchMovie("Inception");
 
 # Proxy
 
-a proxy is a middleman that handles communication between two users and interfaces, so it can apply inputs modification/validation, routing, logging and more
+The Proxy pattern provides a surrogate or placeholder for another object to control access to it. A proxy is a middleman that handles communication between two users and interfaces, so it can apply input modification/validation, routing, logging, and more (e.g., virtual proxies for lazy loading, protection proxies for access control).
+
+Pros: Adds control without changing the subject.  
+Cons: Can introduce latency.  
+When to use: For caching, logging, or remote objects.  
+Real-world analogy: A credit card proxying for cash.
 
 # Flyweight
 
-Imagine a game with thousands of trees. Instead of creating separate objects for each tree, we share the common tree type (shape, texture, color) and only store unique details like position.
+The Flyweight pattern minimizes memory usage by sharing as much data as possible with similar objects. Imagine a game with thousands of trees. Instead of creating separate objects for each tree, we share the common tree type (shape, texture, color) and only store unique details like position. This is great for large numbers of fine-grained objects.
+
+Pros: Reduces memory footprint.  
+Cons: Trades time for space (lookup overhead).  
+When to use: In graphics, games, or text rendering (e.g., sharing character glyphs).  
+Real-world analogy: Shared libraries in OS—code is shared among processes.
 
 ## Example
 
@@ -2039,7 +2156,11 @@ Here are the simple TypeScript examples for each design pattern:
 
 # Singleton
 
-Ensures that only one instance of a class exists and provides a global access point to it.
+The Singleton pattern ensures that only one instance of a class exists and provides a global access point to it. It's useful for resources like configuration managers or database connections, but use sparingly to avoid global state issues.
+
+Pros: Controlled access, reduces namespace pollution.  
+Cons: Hard to test, can hide dependencies.  
+When to use: For logging or caching services.
 
 ## Example
 
@@ -2066,7 +2187,11 @@ console.log(s1 === s2); // true
 
 # Factory
 
-Provides a method to create objects without specifying the exact class.
+The Factory pattern provides a method to create objects without specifying the exact class, delegating instantiation to subclasses. It's a creational pattern for object creation logic.
+
+Pros: Hides creation details, promotes loose coupling.  
+Cons: Can overcomplicate simple instantiation.  
+When to use: When subclasses decide what to create, like document creators.
 
 ## Example
 
@@ -2089,7 +2214,11 @@ console.log(car.model); // Tesla
 
 # Abstract Factory
 
-Creates families of related objects without specifying their concrete classes.
+The Abstract Factory pattern creates families of related objects without specifying their concrete classes. It's useful for themes or platforms where consistent object groups are needed.
+
+Pros: Ensures compatibility, easy to swap families.  
+Cons: Hard to extend with new products.  
+When to use: In cross-platform apps or widget kits.
 
 ## Example
 
@@ -2135,7 +2264,11 @@ button.render(); // Windows Button
 
 # Builder
 
-Constructs complex objects step by step.
+The Builder pattern constructs complex objects step by step, separating construction from representation. It's ideal for objects with many optional parameters.
+
+Pros: Immutable objects, readable code.  
+Cons: Requires a separate builder class.  
+When to use: For configs or objects like strings with many options.
 
 ## Example
 
@@ -2169,7 +2302,12 @@ console.log(car);
 
 # Prototype Pattern
 
-The **Prototype Pattern** allows you to create new objects by copying an existing object (a prototype) instead of creating new instances from scratch. This is useful when object creation is expensive or complex.
+The **Prototype Pattern** allows you to create new objects by copying an existing object (a prototype) instead of creating new instances from scratch. This is useful when object creation is expensive or complex (e.g., database queries for initialization).
+
+Pros: Faster than new; hides complexity.  
+Cons: Deep cloning can be tricky.  
+When to use: In games for cloning enemies or in configs.  
+Real-world analogy: Photocopying a document instead of rewriting it.
 
 ## Example
 
@@ -2198,4 +2336,4 @@ This pattern is useful when you want to duplicate objects while preserving their
 
 # The End
 
-thnks for reaching so far
+Thanks for reaching so far! 
